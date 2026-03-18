@@ -63,7 +63,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
             'password' => 'pass',
         ]);
 
-        $this->runScenario(function () use ($options) {
+        $this->runScenario(function () use ($options): void {
             $adapter = new FtpAdapter($options);
 
             $adapter->write('dirname1/dirname2/path.txt', 'contents', new Config());
@@ -79,7 +79,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
      */
     public function reconnecting_after_failure(): void
     {
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $adapter = $this->adapter();
             static::$connectivityChecker->failNextCall();
 
@@ -96,7 +96,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
     public function reading_a_file_twice_for_issue_1522(): void
     {
         $this->givenWeHaveAnExistingFile('some/nested/path.txt', 'this is it');
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $adapter = $this->adapter();
 
             self::assertEquals('this is it', $adapter->read('some/nested/path.txt'));
@@ -112,13 +112,13 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
      */
     public function failing_to_write_a_file(callable $scenario): void
     {
-        $this->runScenario(function () use ($scenario) {
+        $this->runScenario(function () use ($scenario): void {
             $scenario();
         });
 
         $this->expectException(UnableToWriteFile::class);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $this->adapter()->write('some/path.txt', 'contents', new Config([
                 Config::OPTION_VISIBILITY => Visibility::PUBLIC,
                 Config::OPTION_DIRECTORY_VISIBILITY => Visibility::PUBLIC
@@ -128,19 +128,19 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
     public static function scenariosCausingWriteFailure(): Generator
     {
-        yield "Not being able to create the parent directory" => [function () {
+        yield "Not being able to create the parent directory" => [function (): void {
             mock_function('ftp_mkdir', false);
         }];
 
-        yield "Not being able to set the parent directory visibility" => [function () {
+        yield "Not being able to set the parent directory visibility" => [function (): void {
             mock_function('ftp_chmod', false);
         }];
 
-        yield "Not being able to write the file" => [function () {
+        yield "Not being able to write the file" => [function (): void {
             mock_function('ftp_fput', false);
         }];
 
-        yield "Not being able to set the visibility" => [function () {
+        yield "Not being able to set the visibility" => [function (): void {
             mock_function('ftp_chmod', true, false);
         }];
     }
@@ -157,18 +157,18 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
         $this->expectException(UnableToDeleteDirectory::class);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $this->adapter()->deleteDirectory('some');
         });
     }
 
     public static function scenariosCausingDirectoryDeleteFailure(): Generator
     {
-        yield "ftp_delete failure" => [function () {
+        yield "ftp_delete failure" => [function (): void {
             mock_function('ftp_delete', false);
         }];
 
-        yield "ftp_rmdir failure" => [function () {
+        yield "ftp_rmdir failure" => [function (): void {
             mock_function('ftp_rmdir', false);
         }];
     }
@@ -185,7 +185,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
         $this->expectException(UnableToCopyFile::class);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $this->adapter()->copy('path.txt', 'new/path.txt', new Config());
         });
     }
@@ -200,18 +200,18 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
         $this->expectException(UnableToMoveFile::class);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $this->adapter()->move('path.txt', 'new/path.txt', new Config());
         });
     }
 
     public static function scenariosCausingCopyFailure(): Generator
     {
-        yield "failing to read" => [function () {
+        yield "failing to read" => [function (): void {
             mock_function('ftp_fget', false);
         }];
 
-        yield "failing to write" => [function () {
+        yield "failing to write" => [function (): void {
             mock_function('ftp_fput', false);
         }];
     }
@@ -226,7 +226,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
         $this->expectException(UnableToDeleteFile::class);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $this->adapter()->delete('path.txt');
         });
     }
@@ -242,7 +242,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
         ];
         mock_function('ftp_rawlist', $response);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $adapter = $this->adapter();
             $contents = iterator_to_array($adapter->listContents('/', false), false);
 
@@ -264,7 +264,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
         ];
         mock_function('ftp_rawlist', $response);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $adapter = $this->adapter();
             $contents = iterator_to_array($adapter->listContents('/', false), false);
 
@@ -285,7 +285,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
         $this->expectException(InvalidListResponseReceived::class);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $adapter = $this->adapter();
             iterator_to_array($adapter->listContents('/', false), false);
         });
@@ -304,7 +304,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
         $this->expectException(InvalidListResponseReceived::class);
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $adapter = $this->adapter();
             iterator_to_array($adapter->listContents('/', false), false);
         });
@@ -317,13 +317,13 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
     {
         $adapter = $this->adapter();
 
-        $this->runScenario(function () use ($adapter) {
+        $this->runScenario(function () use ($adapter): void {
             $adapter->createDirectory('directory_name', new Config());
         });
 
         $this->expectException(UnableToRetrieveMetadata::class);
 
-        $this->runScenario(function () use ($adapter) {
+        $this->runScenario(function () use ($adapter): void {
             $adapter->fileSize('directory_name');
         });
     }
@@ -362,7 +362,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
            'password' => 'pass',
        ]);
 
-        $this->runScenario(function () use ($options) {
+        $this->runScenario(function () use ($options): void {
             $adapter = new FtpAdapter($options);
 
             $contents = iterator_to_array($adapter->listContents('somewhere', true), false);
@@ -379,7 +379,7 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
     {
         $this->givenWeHaveAnExistingFile('some dirname/file name.txt');
 
-        $this->runScenario(function () {
+        $this->runScenario(function (): void {
             $adapter = $this->adapter();
 
             $this->assertTrue($adapter->fileExists('some dirname/file name.txt'));

@@ -16,10 +16,7 @@ class FtpConnectionProviderTest extends TestCase
 {
     use RetryOnTestException;
 
-    /**
-     * @var FtpConnectionProvider
-     */
-    private $connectionProvider;
+    private ?\League\Flysystem\Ftp\FtpConnectionProvider $connectionProvider = null;
 
     protected function setUp(): void
     {
@@ -58,7 +55,7 @@ class FtpConnectionProviderTest extends TestCase
             'password' => 'pass',
         ]);
 
-        $this->runScenario(function () use ($options) {
+        $this->runScenario(function () use ($options): void {
             $connection = $this->connectionProvider->createConnection($options);
             $this->assertTrue(ftp_close($connection));
         });
@@ -82,7 +79,7 @@ class FtpConnectionProviderTest extends TestCase
 
         $this->expectException(UnableToEnableUtf8Mode::class);
 
-        $this->runScenario(function () use ($options) {
+        $this->runScenario(function () use ($options): void {
             $this->connectionProvider->createConnection($options);
         });
     }
@@ -104,7 +101,7 @@ class FtpConnectionProviderTest extends TestCase
         mock_function('ftp_raw', ['202 UTF8 mode is always enabled. No need to send this command.']);
         $this->expectNotToPerformAssertions();
 
-        $this->runScenario(function () use ($options) {
+        $this->runScenario(function () use ($options): void {
             $this->connectionProvider->createConnection($options);
         });
     }
@@ -127,7 +124,7 @@ class FtpConnectionProviderTest extends TestCase
 
         $this->expectException(UnableToSetFtpOption::class);
 
-        $this->runScenario(function () use ($options) {
+        $this->runScenario(function () use ($options): void {
             $this->connectionProvider->createConnection($options);
         });
     }
@@ -150,7 +147,7 @@ class FtpConnectionProviderTest extends TestCase
 
         $this->expectException(UnableToMakeConnectionPassive::class);
 
-        $this->runScenario(function () use ($options) {
+        $this->runScenario(function () use ($options): void {
             $this->connectionProvider->createConnection($options);
         });
     }
@@ -211,7 +208,7 @@ class FtpConnectionProviderTest extends TestCase
 
         $this->expectException(UnableToAuthenticate::class);
         $this->retryOnException(UnableToConnectToFtpHost::class);
-        $this->runScenario(function () use ($options) {
+        $this->runScenario(function () use ($options): void {
             $this->connectionProvider->createConnection($options);
         });
     }

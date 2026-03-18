@@ -141,7 +141,7 @@ class FtpAdapter implements FilesystemAdapter
             $this->fileSize($path);
 
             return true;
-        } catch (UnableToRetrieveMetadata $exception) {
+        } catch (UnableToRetrieveMetadata) {
             return false;
         }
     }
@@ -367,10 +367,12 @@ class FtpAdapter implements FilesystemAdapter
         $base = $prefix;
 
         foreach ($listing as $item) {
-            if ($item === '' || preg_match('#.* \.(\.)?$|^total#', $item)) {
+            if ($item === '') {
                 continue;
             }
-
+            if (preg_match('#.* \.(\.)?$|^total#', $item)) {
+                continue;
+            }
             if (preg_match('#^.*:$#', $item)) {
                 $base = preg_replace('~^\./*|:$~', '', $item);
                 continue;
@@ -489,11 +491,7 @@ class FtpAdapter implements FilesystemAdapter
         $parts = str_split($permissions, 3);
 
         // convert the groups
-        $mapper = static function ($part) {
-            return array_sum(array_map(static function ($p) {
-                return (int) $p;
-            }, str_split($part)));
-        };
+        $mapper = (static fn($part) => array_sum(array_map(static fn($p) => (int) $p, str_split($part))));
 
         // converts to decimal number
         return octdec(implode('', array_map($mapper, $parts)));
@@ -623,9 +621,6 @@ class FtpAdapter implements FilesystemAdapter
         return str_replace(['*', '[', ']'], ['\\*', '\\[', '\\]'], $path);
     }
 
-    /**
-     * @return bool
-     */
     private function hasFtpConnection(): bool
     {
         return $this->connection instanceof \FTP\Connection || is_resource($this->connection);
@@ -661,9 +656,6 @@ class FtpAdapter implements FilesystemAdapter
         return $pwd;
     }
 
-    /**
-     * @return PathPrefixer
-     */
     private function prefixer(): PathPrefixer
     {
         if ($this->rootDirectory === null) {

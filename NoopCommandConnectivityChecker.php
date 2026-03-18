@@ -14,7 +14,7 @@ class NoopCommandConnectivityChecker implements ConnectivityChecker
         // @codeCoverageIgnoreStart
         try {
             $response = @ftp_raw($connection, 'NOOP');
-        } catch (TypeError | ValueError $typeError) {
+        } catch (TypeError | ValueError) {
             return false;
         }
         // @codeCoverageIgnoreEnd

@@ -15,7 +15,7 @@ class RawListFtpConnectivityChecker implements ConnectivityChecker
     {
         try {
             return $connection !== false && @ftp_rawlist($connection, './') !== false;
-        } catch (ValueError $errror) {
+        } catch (ValueError) {
             return false;
         }
     }
