@@ -10,6 +10,6 @@ final class UnableToAuthenticate extends RuntimeException implements FtpConnecti
 {
     public function __construct()
     {
-        parent::__construct("Unable to login/authenticate with FTP");
+        parent::__construct('Unable to login/authenticate with FTP');
     }
 }

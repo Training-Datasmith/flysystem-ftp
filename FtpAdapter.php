@@ -4,8 +4,19 @@ declare(strict_types=1);
 
 namespace League\Flysystem\Ftp;
 
+use function array_map;
+
 use DateTime;
+
+use function error_clear_last;
+use function error_get_last;
+use function ftp_chdir;
+use function ftp_close;
+
 use Generator;
+
+use function is_string;
+
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
 use League\Flysystem\FileAttributes;
@@ -20,19 +31,13 @@ use League\Flysystem\UnableToMoveFile;
 use League\Flysystem\UnableToReadFile;
 use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\UnableToSetVisibility;
+
 use League\Flysystem\UnableToWriteFile;
 use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
 use League\Flysystem\UnixVisibility\VisibilityConverter;
 use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use League\MimeTypeDetection\MimeTypeDetector;
 use Throwable;
-
-use function array_map;
-use function error_clear_last;
-use function error_get_last;
-use function ftp_chdir;
-use function ftp_close;
-use function is_string;
 
 class FtpAdapter implements FilesystemAdapter
 {
@@ -85,7 +90,7 @@ class FtpAdapter implements FilesystemAdapter
     private function connection()
     {
         start:
-        if ( ! $this->hasFtpConnection()) {
+        if (! $this->hasFtpConnection()) {
             $this->connection = $this->connectionProvider->createConnection($this->connectionOptions);
             $this->rootDirectory = $this->resolveConnectionRoot($this->connection);
             $this->prefixer = new PathPrefixer($this->rootDirectory);
@@ -168,11 +173,11 @@ class FtpAdapter implements FilesystemAdapter
 
         $location = $this->prefixer()->prefixPath($path);
 
-        if ( ! ftp_fput($this->connection(), $location, $contents, $this->connectionOptions->transferMode())) {
+        if (! ftp_fput($this->connection(), $location, $contents, $this->connectionOptions->transferMode())) {
             throw UnableToWriteFile::atLocation($path, 'writing the file failed');
         }
 
-        if ( ! $visibility = $config->get(Config::OPTION_VISIBILITY)) {
+        if (! $visibility = $config->get(Config::OPTION_VISIBILITY)) {
             return;
         }
 
@@ -198,7 +203,7 @@ class FtpAdapter implements FilesystemAdapter
         $stream = fopen('php://temp', 'w+b');
         $result = @ftp_fget($this->connection(), $stream, $location, $this->connectionOptions->transferMode());
 
-        if ( ! $result) {
+        if (! $result) {
             fclose($stream);
 
             throw UnableToReadFile::fromLocation($path, error_get_last()['message'] ?? '');
@@ -250,7 +255,7 @@ class FtpAdapter implements FilesystemAdapter
         rsort($directories);
 
         foreach ($directories as $directory) {
-            if ( ! @ftp_rmdir($connection, $this->prefixer()->prefixPath($directory))) {
+            if (! @ftp_rmdir($connection, $this->prefixer()->prefixPath($directory))) {
                 throw UnableToDeleteDirectory::atLocation($path, "Could not delete directory $directory");
             }
         }
@@ -266,7 +271,7 @@ class FtpAdapter implements FilesystemAdapter
         $location = $this->prefixer()->prefixPath($path);
         $mode = $this->visibilityConverter->forFile($visibility);
 
-        if ( ! @ftp_chmod($this->connection(), $mode, $location)) {
+        if (! @ftp_chmod($this->connection(), $mode, $location)) {
             $message = error_get_last()['message'] ?? '';
             throw UnableToSetVisibility::atLocation($path, $message);
         }
@@ -282,13 +287,13 @@ class FtpAdapter implements FilesystemAdapter
 
         $object = @ftp_raw($this->connection(), 'STAT ' . $location);
 
-        if (empty($object) || count($object) < 3 || str_starts_with($object[1], "ftpd:")) {
+        if (empty($object) || count($object) < 3 || str_starts_with($object[1], 'ftpd:')) {
             throw UnableToRetrieveMetadata::create($path, $type, error_get_last()['message'] ?? '');
         }
 
         $attributes = $this->normalizeObject($object[1], '');
 
-        if ( ! $attributes instanceof FileAttributes) {
+        if (! $attributes instanceof FileAttributes) {
             throw UnableToRetrieveMetadata::create(
                 $path,
                 $type,
@@ -491,7 +496,7 @@ class FtpAdapter implements FilesystemAdapter
         $parts = str_split($permissions, 3);
 
         // convert the groups
-        $mapper = (static fn($part) => array_sum(array_map(static fn($p) => (int) $p, str_split($part))));
+        $mapper = (static fn ($part) => array_sum(array_map(static fn ($p) => (int) $p, str_split($part))));
 
         // converts to decimal number
         return octdec(implode('', array_map($mapper, $parts)));
@@ -507,7 +512,7 @@ class FtpAdapter implements FilesystemAdapter
         foreach ($listing as $item) {
             yield $item;
 
-            if ( ! $item->isDir()) {
+            if (! $item->isDir()) {
                 continue;
             }
 
@@ -529,7 +534,7 @@ class FtpAdapter implements FilesystemAdapter
             $path = $this->escapePath($path);
         }
 
-        if ( ! $this->isServerSupportingListOptions()) {
+        if (! $this->isServerSupportingListOptions()) {
             $options = '';
         }
 
@@ -548,7 +553,7 @@ class FtpAdapter implements FilesystemAdapter
         $destinationLocation = $this->prefixer()->prefixPath($destination);
         $connection = $this->connection();
 
-        if ( ! @ftp_rename($connection, $sourceLocation, $destinationLocation)) {
+        if (! @ftp_rename($connection, $sourceLocation, $destinationLocation)) {
             throw UnableToMoveFile::because(error_get_last()['message'] ?? 'reason unknown', $source, $destination);
         }
     }
@@ -649,7 +654,7 @@ class FtpAdapter implements FilesystemAdapter
         error_clear_last();
         $pwd = @ftp_pwd($connection);
 
-        if ( ! is_string($pwd)) {
+        if (! is_string($pwd)) {
             throw UnableToResolveConnectionRoot::couldNotGetCurrentDirectory(error_get_last()['message'] ?? '');
         }
 

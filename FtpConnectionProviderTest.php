@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace League\Flysystem\Ftp;
 
-use League\Flysystem\AdapterTestUtilities\RetryOnTestException;
-use PHPUnit\Framework\TestCase;
-
 use function ftp_close;
+
+use League\Flysystem\AdapterTestUtilities\RetryOnTestException;
+
+use PHPUnit\Framework\TestCase;
 
 /**
  * @group ftp

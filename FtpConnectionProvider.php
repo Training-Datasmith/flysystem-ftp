@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace League\Flysystem\Ftp;
 
-use const FTP_USEPASVADDRESS;
 use function error_clear_last;
 use function error_get_last;
+
+use const FTP_USEPASVADDRESS;
 
 class FtpConnectionProvider implements ConnectionProvider
 {
@@ -57,7 +58,7 @@ class FtpConnectionProvider implements ConnectionProvider
      */
     private function authenticate(FtpConnectionOptions $options, $connection): void
     {
-        if ( ! @ftp_login($connection, $options->username(), $options->password())) {
+        if (! @ftp_login($connection, $options->username(), $options->password())) {
             throw new UnableToAuthenticate();
         }
     }
@@ -67,13 +68,13 @@ class FtpConnectionProvider implements ConnectionProvider
      */
     private function enableUtf8Mode(FtpConnectionOptions $options, $connection): void
     {
-        if ( ! $options->utf8()) {
+        if (! $options->utf8()) {
             return;
         }
 
-        $response = @ftp_raw($connection, "OPTS UTF8 ON");
+        $response = @ftp_raw($connection, 'OPTS UTF8 ON');
 
-        if ( ! in_array(substr($response[0], 0, 3), ['200', '202'])) {
+        if (! in_array(substr($response[0], 0, 3), ['200', '202'])) {
             throw new UnableToEnableUtf8Mode(
                 'Could not set UTF-8 mode for connection: ' . $options->host() . '::' . $options->port()
             );
@@ -87,11 +88,11 @@ class FtpConnectionProvider implements ConnectionProvider
     {
         $ignorePassiveAddress = $options->ignorePassiveAddress();
 
-        if ( ! is_bool($ignorePassiveAddress) || ! defined('FTP_USEPASVADDRESS')) {
+        if (! is_bool($ignorePassiveAddress) || ! defined('FTP_USEPASVADDRESS')) {
             return;
         }
 
-        if ( ! @ftp_set_option($connection, FTP_USEPASVADDRESS, ! $ignorePassiveAddress)) {
+        if (! @ftp_set_option($connection, FTP_USEPASVADDRESS, ! $ignorePassiveAddress)) {
             throw UnableToSetFtpOption::whileSettingOption('FTP_USEPASVADDRESS');
         }
     }
@@ -101,7 +102,7 @@ class FtpConnectionProvider implements ConnectionProvider
      */
     private function makeConnectionPassive(FtpConnectionOptions $options, $connection): void
     {
-        if ( ! @ftp_pasv($connection, $options->passive())) {
+        if (! @ftp_pasv($connection, $options->passive())) {
             throw new UnableToMakeConnectionPassive(
                 'Could not set passive mode for connection: ' . $options->host() . '::' . $options->port()
             );

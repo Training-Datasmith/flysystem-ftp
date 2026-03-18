@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace League\Flysystem\Ftp;
 
 use Generator;
+
+use function iterator_to_array;
+
 use League\Flysystem\AdapterTestUtilities\FilesystemAdapterTestCase;
 use League\Flysystem\Config;
 use League\Flysystem\FileAttributes;
@@ -15,9 +18,8 @@ use League\Flysystem\UnableToDeleteFile;
 use League\Flysystem\UnableToMoveFile;
 use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\UnableToWriteFile;
-use League\Flysystem\Visibility;
 
-use function iterator_to_array;
+use League\Flysystem\Visibility;
 
 /**
  * @group ftp
@@ -121,26 +123,26 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
         $this->runScenario(function (): void {
             $this->adapter()->write('some/path.txt', 'contents', new Config([
                 Config::OPTION_VISIBILITY => Visibility::PUBLIC,
-                Config::OPTION_DIRECTORY_VISIBILITY => Visibility::PUBLIC
+                Config::OPTION_DIRECTORY_VISIBILITY => Visibility::PUBLIC,
             ]));
         });
     }
 
     public static function scenariosCausingWriteFailure(): Generator
     {
-        yield "Not being able to create the parent directory" => [function (): void {
+        yield 'Not being able to create the parent directory' => [function (): void {
             mock_function('ftp_mkdir', false);
         }];
 
-        yield "Not being able to set the parent directory visibility" => [function (): void {
+        yield 'Not being able to set the parent directory visibility' => [function (): void {
             mock_function('ftp_chmod', false);
         }];
 
-        yield "Not being able to write the file" => [function (): void {
+        yield 'Not being able to write the file' => [function (): void {
             mock_function('ftp_fput', false);
         }];
 
-        yield "Not being able to set the visibility" => [function (): void {
+        yield 'Not being able to set the visibility' => [function (): void {
             mock_function('ftp_chmod', true, false);
         }];
     }
@@ -164,11 +166,11 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
     public static function scenariosCausingDirectoryDeleteFailure(): Generator
     {
-        yield "ftp_delete failure" => [function (): void {
+        yield 'ftp_delete failure' => [function (): void {
             mock_function('ftp_delete', false);
         }];
 
-        yield "ftp_rmdir failure" => [function (): void {
+        yield 'ftp_rmdir failure' => [function (): void {
             mock_function('ftp_rmdir', false);
         }];
     }
@@ -207,11 +209,11 @@ abstract class FtpAdapterTestCase extends FilesystemAdapterTestCase
 
     public static function scenariosCausingCopyFailure(): Generator
     {
-        yield "failing to read" => [function (): void {
+        yield 'failing to read' => [function (): void {
             mock_function('ftp_fget', false);
         }];
 
-        yield "failing to write" => [function (): void {
+        yield 'failing to write' => [function (): void {
             mock_function('ftp_fput', false);
         }];
     }
