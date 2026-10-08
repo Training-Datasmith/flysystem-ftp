@@ -101,15 +101,18 @@ abstract class AdapterTestCase extends TestCase
 
     protected function assertListCommandLacksOption(string $option): void
     {
+        $foundList = false;
         foreach ($this->listCommands() as $line) {
             if (stripos($line, 'LIST') !== 0) {
                 continue;
             }
+            $foundList = true;
             $this->assertStringNotContainsString(
                 $option,
                 $line,
                 'LIST command should not contain option ' . $option
             );
         }
+        $this->assertTrue($foundList, 'Expected at least one LIST command in the command log');
     }
 }

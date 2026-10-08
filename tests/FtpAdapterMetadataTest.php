@@ -108,4 +108,17 @@ final class FtpAdapterMetadataTest extends AdapterTestCase
         $this->assertStringContainsString('\\[', $log);
         $this->assertStringContainsString('\\]', $log);
     }
+
+    public function test_pureftpd_stat_escapes_brackets_after_write_disconnect_and_visibility(): void
+    {
+        $this->startServer(['pureftpd' => true]);
+        $adapter = $this->adapter();
+        $adapter->write('a[b].txt', 'x', new Config());
+        $adapter->disconnect();
+        $adapter->visibility('a[b].txt');
+        $log = implode("\n", $this->listCommands());
+        $this->assertStringContainsString('STAT', $log);
+        $this->assertStringContainsString('\\[', $log);
+        $this->assertStringContainsString('\\]', $log);
+    }
 }

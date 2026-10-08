@@ -488,6 +488,7 @@ while ($running) {
                 continue;
             }
             if (str_starts_with($upper, 'QUIT')) {
+                touch($workDir . '/session_closed.marker');
                 $send($client, '221 Goodbye');
                 $closeSession();
                 continue 2;

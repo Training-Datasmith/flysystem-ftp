@@ -68,7 +68,7 @@ final class FtpConnectionProviderTest extends TestCase
         ftp_close($connection);
     }
 
-    public function test_utf8_500_throws_and_closes(): void
+    public function test_utf8_500_throws_with_host_and_port_in_message(): void
     {
         $this->server = new FakeFtpServerProcess(['opts_utf8_response' => '500 Error']);
         $port = $this->server->start();

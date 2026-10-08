@@ -18,9 +18,10 @@ final class ImmediateCloseServer
     public function start(): int
     {
         $script = __DIR__ . '/immediate-close-server-bin.php';
+        $this->readyFile = sys_get_temp_dir() . '/immediate-close-ready-' . uniqid('', true) . '.port';
         $pipes = [];
         $this->process = proc_open(
-            [PHP_BINARY, $script],
+            [PHP_BINARY, $script, $this->readyFile],
             [
                 0 => ['pipe', 'r'],
                 1 => ['pipe', 'r'],
@@ -37,13 +38,6 @@ final class ImmediateCloseServer
         fclose($pipes[1]);
         fclose($pipes[2]);
 
-        $status = proc_get_status($this->process);
-        $pid = (int) ($status['pid'] ?? 0);
-        if ($pid <= 0) {
-            throw new RuntimeException('Could not determine immediate-close server pid.');
-        }
-
-        $this->readyFile = sys_get_temp_dir() . '/immediate-close-ready-' . $pid . '.port';
         $deadline = microtime(true) + 10;
         while (microtime(true) < $deadline) {
             if (is_file($this->readyFile)) {
@@ -57,8 +51,6 @@ final class ImmediateCloseServer
         }
 
         throw new RuntimeException('Immediate-close server did not become ready.');
-
-        return $this->port;
     }
 
     public function stop(): void

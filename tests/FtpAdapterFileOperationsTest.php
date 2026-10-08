@@ -182,6 +182,7 @@ final class FtpAdapterFileOperationsTest extends AdapterTestCase
         $this->startServer(['reject_commands' => ['STOR']]);
         $adapter = $this->adapter();
         $this->expectException(UnableToWriteFile::class);
+        $this->expectExceptionMessage('rejected');
         $adapter->write('some/path.txt', 'contents', new Config());
     }
 

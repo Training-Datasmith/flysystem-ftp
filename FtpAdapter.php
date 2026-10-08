@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace League\Flysystem\Ftp;
 
 use DateTime;
-use DateTimeInterface;
 use Generator;
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
@@ -179,7 +178,7 @@ class FtpAdapter implements FilesystemAdapter
         $location = $this->prefixer()->prefixPath($path);
 
         if ( ! @ftp_fput($this->connection(), $location, $contents, $this->connectionOptions->transferMode())) {
-            throw UnableToWriteFile::atLocation($path, 'writing the file failed');
+            throw UnableToWriteFile::atLocation($path, error_get_last()['message'] ?? 'writing the file failed');
         }
 
         if ( ! $visibility = $config->get(Config::OPTION_VISIBILITY)) {
@@ -284,13 +283,14 @@ class FtpAdapter implements FilesystemAdapter
 
     private function fetchMetadata(string $path, string $type): FileAttributes
     {
+        $connection = $this->connection();
         $location = $this->prefixer()->prefixPath($path);
 
         if ($this->isPureFtpdServer()) {
             $location = $this->escapePath($location);
         }
 
-        $object = @ftp_raw($this->connection(), 'STAT ' . $location);
+        $object = @ftp_raw($connection, 'STAT ' . $location);
 
         if (empty($object) || count($object) < 3 || str_starts_with($object[1], "ftpd:")) {
             throw UnableToRetrieveMetadata::create($path, $type, error_get_last()['message'] ?? '');
@@ -470,9 +470,9 @@ class FtpAdapter implements FilesystemAdapter
         return str_starts_with($permissions, 'd');
     }
 
-    private function normalizeUnixTimestamp(string $month, string $day, string $timeOrYear, ?DateTimeInterface $now = null): int
+    private function normalizeUnixTimestamp(string $month, string $day, string $timeOrYear): int
     {
-        $now ??= new DateTime();
+        $now = new DateTime();
 
         if (is_numeric($timeOrYear)) {
             $year = $timeOrYear;
@@ -480,7 +480,7 @@ class FtpAdapter implements FilesystemAdapter
             $minute = '00';
             $yearIsAssumed = false;
         } else {
-            if ( ! preg_match('/^\d{1,2}:\d{2}$/', $timeOrYear)) {
+            if ( ! preg_match('/^\d{1,2}:\d{2}/', $timeOrYear)) {
                 throw new InvalidListResponseReceived("Metadata can't be parsed from timestamp '$timeOrYear'.");
             }
 
@@ -495,7 +495,7 @@ class FtpAdapter implements FilesystemAdapter
             throw new InvalidListResponseReceived("Metadata can't be parsed from date '$month $day $timeOrYear'.");
         }
 
-        if ($yearIsAssumed && $dateTime > $now) {
+        if ($yearIsAssumed && $dateTime > (clone $now)->modify('+1 day')) {
             $dateTime->modify('-1 year');
         }
 
