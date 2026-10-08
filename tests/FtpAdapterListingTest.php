@@ -53,11 +53,32 @@ final class FtpAdapterListingTest extends AdapterTestCase
     public function test_recent_unix_timestamp_uses_previous_year_when_in_the_future(): void
     {
         $now = new DateTime('now', new \DateTimeZone('UTC'));
-        $future = (clone $now)->modify('+1 day');
-        if ($future->format('Y') !== $now->format('Y')) {
-            $future = (clone $now)->modify('+1 hour');
+        $year = (int) $now->format('Y');
+        $future = null;
+
+        foreach (['+1 day', '+1 hour'] as $modifier) {
+            $candidate = (clone $now)->modify($modifier);
+            if ((int) $candidate->format('Y') === $year && $candidate > $now) {
+                $future = $candidate;
+                break;
+            }
         }
-        if ($future <= $now) {
+
+        if ($future === null) {
+            $timezone = $now->getTimezone();
+            $yearEnd = DateTime::createFromFormat('Y-m-d H:i:s', $year . '-12-31 23:59:59', $timezone);
+            if ($yearEnd !== false) {
+                for ($timestamp = $now->getTimestamp() + 60; $timestamp <= $yearEnd->getTimestamp(); $timestamp += 60) {
+                    $candidate = (new DateTime('@' . $timestamp))->setTimezone($timezone);
+                    if ((int) $candidate->format('Y') === $year && $candidate > $now) {
+                        $future = $candidate;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($future === null || $future <= $now) {
             $this->markTestSkipped('Cannot build a same-calendar-year future unix listing timestamp for the current moment.');
         }
 
