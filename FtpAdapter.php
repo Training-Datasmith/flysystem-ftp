@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace League\Flysystem\Ftp;
 
 use DateTime;
+use DateTimeInterface;
 use Generator;
 use League\Flysystem\Config;
 use League\Flysystem\DirectoryAttributes;
@@ -87,7 +88,16 @@ class FtpAdapter implements FilesystemAdapter
         start:
         if ( ! $this->hasFtpConnection()) {
             $this->connection = $this->connectionProvider->createConnection($this->connectionOptions);
-            $this->rootDirectory = $this->resolveConnectionRoot($this->connection);
+
+            try {
+                $this->rootDirectory = $this->resolveConnectionRoot($this->connection);
+            } catch (Throwable $e) {
+                @ftp_close($this->connection);
+                $this->connection = false;
+                $this->rootDirectory = null;
+                throw $e;
+            }
+
             $this->prefixer = new PathPrefixer($this->rootDirectory);
 
             return $this->connection;
@@ -117,7 +127,11 @@ class FtpAdapter implements FilesystemAdapter
             return $this->isPureFtpdServer;
         }
 
-        $response = ftp_raw($this->connection, 'HELP');
+        $response = @ftp_raw($this->connection, 'HELP');
+
+        if ( ! is_array($response)) {
+            return $this->isPureFtpdServer = false;
+        }
 
         return $this->isPureFtpdServer = stripos(implode(' ', $response), 'Pure-FTPd') !== false;
     }
@@ -128,7 +142,12 @@ class FtpAdapter implements FilesystemAdapter
             return $this->useRawListOptions;
         }
 
-        $response = ftp_raw($this->connection, 'SYST');
+        $response = @ftp_raw($this->connection, 'SYST');
+
+        if ( ! is_array($response)) {
+            return $this->useRawListOptions = false;
+        }
+
         $syst = implode(' ', $response);
 
         return $this->useRawListOptions = stripos($syst, 'FileZilla') === false
@@ -168,7 +187,7 @@ class FtpAdapter implements FilesystemAdapter
 
         $location = $this->prefixer()->prefixPath($path);
 
-        if ( ! ftp_fput($this->connection(), $location, $contents, $this->connectionOptions->transferMode())) {
+        if ( ! @ftp_fput($this->connection(), $location, $contents, $this->connectionOptions->transferMode())) {
             throw UnableToWriteFile::atLocation($path, 'writing the file failed');
         }
 
@@ -276,7 +295,7 @@ class FtpAdapter implements FilesystemAdapter
     {
         $location = $this->prefixer()->prefixPath($path);
 
-        if ($this->isPureFtpdServer) {
+        if ($this->isPureFtpdServer()) {
             $location = $this->escapePath($location);
         }
 
@@ -460,18 +479,34 @@ class FtpAdapter implements FilesystemAdapter
         return str_starts_with($permissions, 'd');
     }
 
-    private function normalizeUnixTimestamp(string $month, string $day, string $timeOrYear): int
+    private function normalizeUnixTimestamp(string $month, string $day, string $timeOrYear, ?DateTimeInterface $now = null): int
     {
+        $now ??= new DateTime();
+
         if (is_numeric($timeOrYear)) {
             $year = $timeOrYear;
             $hour = '00';
             $minute = '00';
+            $yearIsAssumed = false;
         } else {
-            $year = date('Y');
+            if ( ! preg_match('/^\d{1,2}:\d{2}$/', $timeOrYear)) {
+                throw new InvalidListResponseReceived("Metadata can't be parsed from timestamp '$timeOrYear'.");
+            }
+
+            $year = $now->format('Y');
             [$hour, $minute] = explode(':', $timeOrYear);
+            $yearIsAssumed = true;
         }
 
         $dateTime = DateTime::createFromFormat('Y-M-j-G:i:s', "$year-$month-$day-$hour:$minute:00");
+
+        if ($dateTime === false) {
+            throw new InvalidListResponseReceived("Metadata can't be parsed from date '$month $day $timeOrYear'.");
+        }
+
+        if ($yearIsAssumed && $dateTime > $now) {
+            $dateTime->modify('-1 year');
+        }
 
         return $dateTime->getTimestamp();
     }
