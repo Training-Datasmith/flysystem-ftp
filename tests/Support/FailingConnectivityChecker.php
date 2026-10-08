@@ -11,8 +11,11 @@ final class FailingConnectivityChecker implements ConnectivityChecker
 {
     private bool $failNext = false;
 
-    public function __construct(private ConnectivityChecker $inner = new NoopCommandConnectivityChecker())
+    private ConnectivityChecker $inner;
+
+    public function __construct(?ConnectivityChecker $inner = null)
     {
+        $this->inner = $inner ?? new NoopCommandConnectivityChecker();
     }
 
     public function failNextCall(): void

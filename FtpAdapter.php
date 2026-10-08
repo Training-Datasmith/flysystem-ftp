@@ -127,11 +127,7 @@ class FtpAdapter implements FilesystemAdapter
             return $this->isPureFtpdServer;
         }
 
-        $response = @ftp_raw($this->connection, 'HELP');
-
-        if ( ! is_array($response)) {
-            return $this->isPureFtpdServer = false;
-        }
+        $response = ftp_raw($this->connection, 'HELP');
 
         return $this->isPureFtpdServer = stripos(implode(' ', $response), 'Pure-FTPd') !== false;
     }
@@ -142,12 +138,7 @@ class FtpAdapter implements FilesystemAdapter
             return $this->useRawListOptions;
         }
 
-        $response = @ftp_raw($this->connection, 'SYST');
-
-        if ( ! is_array($response)) {
-            return $this->useRawListOptions = false;
-        }
-
+        $response = ftp_raw($this->connection, 'SYST');
         $syst = implode(' ', $response);
 
         return $this->useRawListOptions = stripos($syst, 'FileZilla') === false

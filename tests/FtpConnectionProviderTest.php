@@ -44,7 +44,7 @@ final class FtpConnectionProviderTest extends TestCase
         ]);
 
         $connection = (new FtpConnectionProvider())->createConnection($options);
-        $this->assertInstanceOf(\FTP\Connection::class, $connection);
+        $this->assertIsOpenFtpConnection($connection);
         $this->assertTrue(ftp_close($connection));
         $this->assertGreaterThan(0, count(array_filter($this->server->commandLog(), static fn (string $line): bool => str_starts_with($line, 'USER '))));
         $log = implode("\n", $this->server->commandLog());
@@ -64,7 +64,7 @@ final class FtpConnectionProviderTest extends TestCase
         ]);
 
         $connection = (new FtpConnectionProvider())->createConnection($options);
-        $this->assertInstanceOf(\FTP\Connection::class, $connection);
+        $this->assertIsOpenFtpConnection($connection);
         ftp_close($connection);
     }
 
@@ -180,13 +180,27 @@ final class FtpConnectionProviderTest extends TestCase
             'timeout' => 3,
         ]);
 
-        $this->expectException(UnableToSetFtpOption::class);
-        $this->expectExceptionMessage('FTP_USEPASVADDRESS');
-        (new FtpConnectionProvider())->createConnection($options);
+        try {
+            (new FtpConnectionProvider())->createConnection($options);
+            $this->fail('Expected UnableToSetFtpOption');
+        } catch (UnableToSetFtpOption $exception) {
+            $this->assertStringContainsString('FTP_USEPASVADDRESS', $exception->getMessage());
+        }
 
         FtpFunctionControl::$failSetOption = false;
         $connection = (new FtpConnectionProvider())->createConnection($options);
-        $this->assertInstanceOf(\FTP\Connection::class, $connection);
+        $this->assertIsOpenFtpConnection($connection);
         ftp_close($connection);
+    }
+
+    /**
+     * @param resource|\FTP\Connection $connection
+     */
+    private function assertIsOpenFtpConnection($connection): void
+    {
+        $this->assertTrue(
+            is_resource($connection)
+            || (class_exists(\FTP\Connection::class) && $connection instanceof \FTP\Connection)
+        );
     }
 }

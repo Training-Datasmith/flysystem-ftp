@@ -117,8 +117,6 @@ socket_bind($server, '127.0.0.1', 0);
 socket_listen($server, 5);
 $port = socket_getsockname($server, $addr, $boundPort);
 file_put_contents($workDir . '/ready.port', (string) $boundPort);
-fwrite(STDOUT, "READY {$boundPort}\n");
-fflush(STDOUT);
 
 socket_set_nonblock($server);
 
@@ -347,7 +345,7 @@ while ($running) {
                 continue;
             }
             if (str_starts_with($upper, 'HELP')) {
-                $help = $config['help_response'] ?? '214-Help\r\n214 End';
+                $help = $config['help_response'] ?? "214-Help\r\n214 End";
                 if (str_contains($help, 'Pure-FTPd') || ($config['pureftpd'] ?? false)) {
                     $help = '214 Pure-FTPd help listing';
                 }

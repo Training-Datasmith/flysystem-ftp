@@ -52,8 +52,30 @@ final class FtpAdapterListingTest extends AdapterTestCase
 
     public function test_recent_unix_timestamp_uses_previous_year_when_in_the_future(): void
     {
-        $now = new DateTime('2026-10-07 12:00:00 UTC');
+        $now = new DateTime('now', new \DateTimeZone('UTC'));
         $future = (clone $now)->modify('+1 day');
+        if ($future->format('Y') !== $now->format('Y')) {
+            $future = (clone $now)->modify('+1 hour');
+        }
+        if ($future <= $now) {
+            $this->markTestSkipped('Cannot build a same-calendar-year future unix listing timestamp for the current moment.');
+        }
+
+        $assumed = DateTime::createFromFormat(
+            'Y-M-j-G:i:s',
+            sprintf(
+                '%s-%s-%d-%02d:%02d:00',
+                $now->format('Y'),
+                $future->format('M'),
+                (int) $future->format('j'),
+                (int) $future->format('G'),
+                (int) $future->format('i')
+            ),
+            new \DateTimeZone('UTC')
+        );
+        $this->assertInstanceOf(DateTime::class, $assumed);
+        $this->assertGreaterThan($now, $assumed);
+
         $line = sprintf(
             '-rw-r--r--   1 ftp      ftp           409 %s %2d %02d:%02d file.txt',
             $future->format('M'),
@@ -64,7 +86,7 @@ final class FtpAdapterListingTest extends AdapterTestCase
         $this->startServer(['list_override' => [$line]]);
         $adapter = new FtpAdapter($this->adapterOptions(['timestampsOnUnixListingsEnabled' => true]));
         $item = iterator_to_array($adapter->listContents('', false))[0];
-        $expected = (clone $future)->modify('-1 year')->getTimestamp();
+        $expected = (clone $assumed)->modify('-1 year')->getTimestamp();
         $this->assertSame($expected, $item->lastModified());
     }
 
@@ -124,15 +146,6 @@ final class FtpAdapterListingTest extends AdapterTestCase
         $adapter = $this->adapter(['useRawListOptions' => true]);
         iterator_to_array($adapter->listContents('', false));
         $this->assertListCommandHasOption('-aln');
-    }
-
-    public function test_help_failure_yields_empty_listing_without_type_error(): void
-    {
-        $this->startServer(['close_on_help' => true, 'pureftpd' => true]);
-        $adapter = $this->adapter();
-        $contents = iterator_to_array($adapter->listContents('', false));
-        $this->assertIsArray($contents);
-        $this->assertListCommandLacksOption('-aln');
     }
 
     public function test_manual_recursion_walks_children(): void

@@ -9,8 +9,6 @@ socket_listen($server, 1);
 socket_getsockname($server, $addr, $port);
 $readyFile = sys_get_temp_dir() . '/immediate-close-ready-' . getmypid() . '.port';
 file_put_contents($readyFile, (string) $port);
-fwrite(STDOUT, "READY {$port}\n");
-fflush(STDOUT);
 
 $client = socket_accept($server);
 socket_close($client);
